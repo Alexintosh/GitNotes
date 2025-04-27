@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "generatedAt": "2025-04-26T22:36:50.786Z",
+    "tasksAnalyzed": 5,
+    "thresholdScore": 5,
+    "projectName": "Your Project Name",
+    "usedResearch": false
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 6,
+      "taskTitle": "Add Vim Mode to Markdown Editor",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of Vim mode in a Markdown editor into detailed technical subtasks, including integration with CodeMirror, key mapping configuration, mode toggle functionality, visual indicators, and user preference storage.",
+      "reasoning": "This task involves integrating a third-party library (@replit/codemirror-vim) with existing editor functionality. The complexity comes from configuring Vim keybindings, implementing mode switching, and ensuring proper user feedback. While the library handles much of the Vim functionality, proper integration and UI elements add moderate complexity."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Implement Manual Git Synchronization",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Create detailed technical subtasks for implementing a manual Git synchronization system, including backend Go services for Git operations, frontend UI components for status display, error handling mechanisms for various Git scenarios, and proper state management between operations.",
+      "reasoning": "This task requires implementing Git operations in Go, creating a service layer, handling various error conditions, and building UI components to display sync status. The complexity is high due to the need to handle Git's various edge cases (auth failures, network issues, merge conflicts) and maintain proper state between frontend and backend."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement Automatic Background Synchronization",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the technical subtasks needed to implement a background Git synchronization system in Go, including goroutine management, configurable sync intervals, status reporting mechanisms, proper cancellation handling, and integration with the existing manual sync functionality.",
+      "reasoning": "Building on the manual sync functionality, this task adds complexity through concurrent programming (goroutines), configurable timing, and proper shutdown handling. The background worker needs to communicate status updates and handle various edge cases, making this moderately complex."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Implement Conflict Detection and Notification",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Create detailed subtasks for implementing Git conflict detection and user notification systems, including conflict identification logic, UI components for displaying conflicts, guidance for resolution workflows, and integration with the existing sync functionality.",
+      "reasoning": "This task focuses on detecting and handling Git conflicts, which involves complex error parsing, creating intuitive UI notifications, and guiding users through resolution. The complexity comes from properly identifying conflicts, presenting them clearly to users, and providing actionable resolution steps."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Polish UI/UX and Implement Error Handling",
+      "complexityScore": 8,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Break down the process of polishing a Git-based editor application into detailed subtasks covering UI consistency improvements, comprehensive error handling implementation, user feedback mechanisms, keyboard shortcut system, settings persistence, performance optimization, and final production preparation.",
+      "reasoning": "This is a broad task covering multiple aspects of application polish: UI/UX refinement, error handling, feedback mechanisms, keyboard shortcuts, settings persistence, performance optimization, and final production preparation. Each of these areas could be substantial on its own, making this a complex task that touches many parts of the application."
+    }
+  ]
+}

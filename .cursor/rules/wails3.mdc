@@ -1,0 +1,53 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Wails 3 Development Workflow
+
+- **Always Use wails3 Command Prefix**
+  - Wails 3 commands must use `wails3` prefix, not just `wails`
+  - This applies to all development, build, and generation commands
+  
+- **Running the Application**
+  - **✅ DO: Use `wails3 dev` to run the application**
+    ```bash
+    # Run the full application (backend + frontend)
+    wails3 dev
+    ```
+  - **❌ DON'T: Use `npm run dev` or other frontend-only commands**
+    ```bash
+    # WRONG: This only runs the frontend, not the Go backend
+    cd frontend && npm run dev
+    ```
+    
+- **Fixing Port Conflicts**
+  - If port 9245 (default Wails dev port) is in use:
+    ```bash
+    # Find the process using the port
+    lsof -i :9245
+    # Kill the process
+    kill <PID>
+    # Then run the app
+    wails3 dev
+    ```
+  - **Never change ports** in development unless explicitly required
+  
+- **Building the Application**
+  - **✅ DO: Use `wails3 build` for production builds**
+    ```bash
+    wails3 build
+    ```
+  
+- **Generating Bindings**
+  - When Go backend service changes require updated TypeScript bindings:
+    ```bash
+    wails3 generate bindings
+    ```
+  
+- **Debugging**
+  - Use Wails dev server console for both frontend and backend logs
+  - Backend (Go) logs appear in the terminal running `wails3 dev`
+  - Frontend (React) logs appear in the browser console
+  
+This rule ensures proper integration between the Go backend and React frontend in Wails applications. Using `wails3 dev` starts both the backend and frontend together, properly connecting the frontend to the backend Go services.

@@ -1,0 +1,124 @@
+# Overview
+This document outlines the requirements for "GitNotes", a desktop application designed for individuals who use a Git repository (specifically GitHub initially) as their "second brain" or personal knowledge management system. The application aims to solve the problem of inefficiently navigating and editing Markdown notes directly within a cloned repository using standard file explorers and text editors. GitNotes provides a dedicated interface featuring a file/folder tree view synchronized with the Git repository, a rich Markdown editor with Vim mode, and automated background synchronization (commit/push) to keep the local and remote repositories up-to-date. The target user is likely a developer or technically-inclined individual comfortable with Git and Markdown. The value proposition is a streamlined, integrated workflow for managing Git-based notes with automatic backups and versioning.
+
+# Core Features
+
+*   **Repository Connection & Management:**
+    *   **What it does:** Allows the user to connect the application to an existing GitHub repository by providing its URL and necessary authentication credentials (initially HTTPS PAT, potentially SSH later). Clones the repository to a local directory managed by the application.
+    *   **Why it's important:** This is the foundational step to link the user's notes repository with the application.
+    *   **How it works:** Uses the Go backend (with `go-git`) to perform a `git clone`. Stores repository configuration securely. Provides feedback on connection status.
+*   **File/Folder Tree Navigation:**
+    *   **What it does:** Displays the directory structure of the connected Git repository in a hierarchical tree view within the application's UI. Allows users to browse folders and select Markdown files.
+    *   **Why it's important:** Provides an intuitive way to navigate the note structure without leaving the application.
+    *   **How it works:** The Go backend reads the file system structure of the cloned repository. The React frontend renders this structure in an interactive tree component. Updates automatically (or via refresh) if the underlying repo structure changes (e.g., after a `git pull`).
+*   **Markdown Editor with Vim Mode:**
+    *   **What it does:** Provides a feature-rich editor pane specifically for viewing and editing Markdown (`.md`) files selected from the tree view. Includes syntax highlighting, preview capabilities (optional), and Vim keybindings for efficient text manipulation.
+    *   **Why it's important:** Offers a dedicated and optimized editing experience compared to generic text editors, catering to users familiar with Vim.
+    *   **How it works:** Integrates a suitable React Markdown editor component (e.g., based on CodeMirror) configured with Markdown extensions and Vim mode enabled. Loads file content fetched by the Go backend and sends updated content back for saving.
+*   **Auto-Save & Git Synchronization:**
+    *   **What it does:** Automatically saves changes made in the editor to the local file system. Periodically (on a configurable timer or after detecting changes), it stages all changes, commits them locally with a generic message (e.g., "Auto-sync"), pulls the latest changes from the remote (attempting a rebase), and pushes the local commits to the remote repository. Handles addition of new files and potential deletion tracking.
+    *   **Why it's important:** Ensures notes are consistently backed up and versioned in the remote Git repository without requiring manual Git commands from the user. Provides peace of mind.
+    *   **How it works:** A background Go routine monitors the local repository for changes or runs on a timer. It executes `go-git` commands (`add`, `commit`, `pull --rebase`, `push`) sequentially. The frontend displays the current synchronization status (e.g., Idle, Syncing, Up-to-date, Error). Robust error handling and notification are crucial, especially for authentication failures or merge conflicts during the pull/push phase.
+
+# User Experience
+
+*   **User Personas:** Developers, writers, researchers, students, or anyone using a Git repository to manage structured text notes in Markdown. Familiarity with Git concepts is assumed.
+*   **Key User Flows:**
+    1.  **First Launch & Setup:** User opens app -> App prompts for GitHub Repo URL, local storage path (defaults suggested), and PAT -> User provides details -> App clones repo -> Main UI loads.
+    2.  **Editing Notes:** User navigates tree view -> Selects a Markdown file -> File content loads in editor -> User edits content using standard or Vim commands -> Changes are saved automatically to the local file.
+    3.  **Background Sync:** App detects changes or timer elapses -> App performs `add`, `commit`, `pull`, `push` in the background -> Status indicator updates (e.g., "Syncing...", "Up-to-date").
+    4.  **Conflict Scenario (MVP):** Background sync encounters a merge conflict during `pull` -> App stops sync process -> Status indicator shows "Error: Merge Conflict" -> User needs to resolve conflict manually outside the app (using terminal or Git tool) -> User triggers manual sync or waits for next auto-sync attempt.
+*   **UI/UX Considerations:**
+    *   Clean, minimalist interface.
+    *   Resizable panels for tree view and editor.
+    *   Clear status indication for Git operations (status bar).
+    *   Responsive editor performance.
+    *   Secure handling and storage of PAT/credentials (using OS keychain).
+    *   Clear error messages and guidance, especially for Git-related issues.
+    *   Settings panel for configuring repo URL, local path, PAT, auto-sync interval.
+
+# Technical Architecture
+
+*   **Framework:** Wails v3
+*   **Frontend:** React + TypeScript, Vite for build.
+*   **Backend:** Go
+*   **Core Libraries:**
+    *   Go: `go-git/go-git/v5` for all Git operations. Standard library (`os`, `io/ioutil`) for file system access.
+    *   React: State management (e.g., Zustand), Markdown Editor component (e.g., `@uiw/react-codemirror` with `@replit/codemirror-vim`), File Tree component (e.g., build custom or use library like `react-arborist`).
+*   **Data Models:** Configuration struct (RepoURL, LocalPath, AuthToken/Type), FileNode struct for tree view.
+*   **APIs/Bindings (Go -> JS):**
+    *   `ConnectRepository(url, path, token)`
+    *   `GetRepositoryStructure()` -> returns tree data
+    *   `GetFileContent(filePath)` -> returns string
+    *   `WriteFileContent(filePath, content)`
+    *   `TriggerManualSync()`
+    *   `GetSyncStatus()` -> returns status enum/string
+    *   `GetSettings()`, `SetSettings(...)`
+*   **Authentication:** Start with GitHub HTTPS Personal Access Token (PAT). Store securely using OS-specific keychain libraries (e.g., `github.com/keybase/go-keychain`). SSH key support as a future enhancement.
+*   **Concurrency:** Go routine for the background auto-sync worker. Use channels for communication between the worker and the main application state if needed (e.g., for status updates).
+
+# Development Roadmap
+
+*   **Phase 1: MVP (Core Functionality)**
+    *   Implement repository cloning via HTTPS PAT.
+    *   Implement backend logic to read directory structure and file content.
+    *   Implement frontend tree view to display structure and allow file selection.
+    *   Implement basic Markdown editor (CodeMirror) to display file content.
+    *   Implement saving edited content back to the local file.
+    *   Implement *manual* Git sync button (performs add, commit, pull, push).
+    *   Basic status display for manual sync.
+    *   Basic settings panel for repo config.
+    *   Secure PAT storage using OS keychain.
+*   **Phase 2: Editor Enhancements & Auto-Sync**
+    *   Enable Vim mode in the Markdown editor.
+    *   Implement background auto-sync worker (timer-based initially).
+    *   Add more detailed status reporting for auto-sync (Idle, Syncing, Pushing, Pulling, Error).
+    *   Refine error handling for Git operations (auth errors, network issues).
+    *   Implement detection of new/deleted files for commits.
+*   **Phase 3: Advanced Features & Polish**
+    *   Conflict detection during pull/push with clear user notification (manual resolution still required).
+    *   (Optional) Basic conflict resolution UI assist (show diff, offer choices - complex).
+    *   (Optional) Add support for SSH key authentication.
+    *   (Optional) Add Markdown preview feature.
+    *   Refine UI/UX based on testing.
+    *   Improve performance for large repositories.
+
+# Logical Dependency Chain
+
+1.  **Backend:** Setup Wails project, Add `go-git` dependency.
+2.  **Backend:** Implement basic HTTPS PAT authentication logic for `go-git`.
+3.  **Backend:** Implement `ConnectRepository` function (cloning).
+4.  **Backend:** Implement secure PAT storage (keychain).
+5.  **Frontend:** Create basic UI layout (panels for tree, editor, status).
+6.  **Frontend:** Create settings/connection UI form.
+7.  **Binding:** Bind `ConnectRepository` and call from frontend.
+8.  **Backend:** Implement `GetRepositoryStructure`.
+9.  **Frontend:** Implement Tree View component using data from `GetRepositoryStructure`.
+10. **Backend:** Implement `GetFileContent`.
+11. **Frontend:** Implement Markdown Editor component, load content on file selection.
+12. **Backend:** Implement `WriteFileContent`.
+13. **Frontend:** Implement saving mechanism (e.g., on blur, explicit save button initially).
+14. **Backend:** Implement manual `TriggerManualSync` (add, commit, pull, push sequence).
+15. **Frontend:** Add button to call `TriggerManualSync`, display basic status.
+16. **Backend:** Implement Auto-Sync worker (goroutine, timer).
+17. **Frontend:** Add detailed sync status display, configure auto-sync interval in settings.
+18. **Frontend:** Enable Vim mode in the editor.
+19. **Backend/Frontend:** Implement conflict detection and user notification.
+
+# Risks and Mitigations
+
+*   **Risk:** Git Authentication Complexity (PAT security, SSH setup).
+    *   **Mitigation:** Start with HTTPS PAT, use OS keychain for storage, provide clear user instructions. Defer SSH to later phase.
+*   **Risk:** Git Merge Conflicts during Auto-Sync.
+    *   **Mitigation:** MVP: Detect conflict, notify user clearly, stop auto-sync, require manual resolution outside the app. Future: Explore basic in-app diff views or guided resolution.
+*   **Risk:** Performance with large repositories or frequent changes.
+    *   **Mitigation:** Perform Git operations asynchronously in Go routine. Make auto-sync interval configurable. Optimize file system reads.
+*   **Risk:** Error Handling for Git operations (network, deleted remote branches, force pushes).
+    *   **Mitigation:** Implement comprehensive error checking in `go-git` calls, provide informative error messages to the user via the status bar/notifications.
+*   **Risk:** Cross-Platform Compatibility (Wails, Keychain).
+    *   **Mitigation:** Rely on Wails for core cross-platform support. Use established cross-platform Go keychain libraries. Test thoroughly on target OS (macOS, Windows, Linux).
+
+# Appendix
+
+*   **Key Libraries:** `go-git.v5`, `github.com/keybase/go-keychain`, `@uiw/react-codemirror`, `@replit/codemirror-vim`.
+*   **Target Platform:** Wails v3 (ensure compatibility with latest stable release).

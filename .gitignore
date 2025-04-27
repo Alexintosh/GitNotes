@@ -1,0 +1,40 @@
+.idea/
+.vscode/
+.vs/
+.task/
+bindings/
+.DS_Store
+
+bin
+frontend/dist
+frontend/node_modules
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+Inter Font License.txt
+
+# Added by Claude Task Master
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+.env
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+# Task files
+tasks.json
+tasks/ 
+
+mcp.json

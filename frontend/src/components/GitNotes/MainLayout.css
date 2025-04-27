@@ -1,0 +1,234 @@
+/* MainLayout.css */
+.react-resizable {
+  position: relative;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  bottom: 0;
+  right: -5px;
+  cursor: col-resize;
+  z-index: 100;
+}
+
+.react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 30px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  transition: background-color 0.2s;
+}
+
+.react-resizable:hover .react-resizable-handle::after {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Resizable panels */
+.resizable-panel {
+  position: relative;
+  height: 100%;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 5px;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background-color 0.2s;
+}
+
+.resize-handle:hover, 
+.resize-handle.active {
+  background-color: rgba(24, 144, 255, 0.4);
+}
+
+.resizable-sidebar {
+  transition: width 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.resizable-sidebar .ant-layout-sider-children {
+  height: 100%;
+  overflow: auto;
+  padding-bottom: 40px;
+}
+
+.sidebar-collapse-button {
+  position: absolute;
+  top: 10px;
+  right: -12px;
+  left: auto;
+  z-index: 1000;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.3s, right 0.3s;
+}
+
+.sidebar-collapsed .sidebar-collapse-button {
+  transform: rotate(180deg);
+  right: -12px;
+  left: auto;
+}
+
+/* Split pane resizing */
+.split-pane-container {
+  display: flex;
+  height: 100%;
+  position: relative;
+}
+
+.split-pane-divider {
+  width: 5px;
+  cursor: col-resize;
+  margin: 0 -2px;
+  background-color: transparent;
+  position: relative;
+  z-index: 10;
+}
+
+.split-pane-divider:hover,
+.split-pane-divider.dragging {
+  background-color: rgba(24, 144, 255, 0.4);
+}
+
+.split-pane-divider-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .react-resizable-handle::after {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .react-resizable:hover .react-resizable-handle::after {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .resize-handle:hover,
+[data-theme="dark"] .resize-handle.active,
+[data-theme="dark"] .split-pane-divider:hover,
+[data-theme="dark"] .split-pane-divider.dragging {
+  background-color: rgba(76, 157, 239, 0.4);
+}
+
+[data-theme="dark"] .sidebar-collapse-button {
+  background-color: rgba(40, 40, 40, 0.9);
+}
+
+[data-theme="dark"] .split-pane-divider-icon {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Status bar styling */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 32px;
+  border-top: 1px solid #f0f0f0;
+  background-color: #fafafa;
+}
+
+[data-theme="dark"] .status-bar {
+  border-top: 1px solid #303030;
+  background-color: #141414;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.status-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.status-indicator-dot.connected {
+  background-color: #52c41a;
+}
+
+.status-indicator-dot.disconnected {
+  background-color: #ff4d4f;
+}
+
+.status-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.file-tree-container {
+  height: 100%;
+  overflow: auto;
+  padding-bottom: 40px;
+}
+
+/* This ensures all parent containers don't block the scrolling */
+.resizable-sidebar,
+.resizable-sidebar .ant-layout-sider,
+.resizable-sidebar .ant-layout-sider-children {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Container hidden, child scrollable */
+}
+
+.resizable-sidebar .ant-layout-sider-children {
+  flex: 1;
+}
+
+/* Sidebar toggle button styles */
+.sidebar-toggle-button {
+  position: absolute;
+  top: 10px;
+  left: 268px; /* Position when sidebar is expanded */
+  z-index: 1000;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.3s, left 0.3s;
+}
+
+.sidebar-toggle-button.collapsed {
+  transform: rotate(180deg);
+  left: 12px; /* Position when sidebar is collapsed */
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .sidebar-toggle-button {
+  background-color: #141414;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+} 

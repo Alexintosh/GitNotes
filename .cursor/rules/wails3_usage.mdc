@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Rules for working with Wails v3 in this project
+globs: *.go, frontend/**/*
+alwaysApply: true
+---
+
+# Wails 3 Usage Rules
+
+- **Project Uses Wails v3, Not v2**
+  - This project is built with Wails v3, despite the CLI tool possibly showing v2.x
+  - The configuration file is `wails3.json` not `wails.json`
+  - All CLI commands must use `wails3` instead of `wails`
+
+- **Configuration and Structure**
+  - Configuration lives in `wails3.json` in the project root
+  - Frontend code is in `frontend/` directory
+  - Bindings are generated in `frontend/bindings/`
+
+- **Command Usage Examples**
+  ```bash
+  # ✅ DO: Use wails3 command prefix
+  wails3 dev
+  wails3 build
+  wails3 generate bindings
+
+  # ❌ DON'T: Use wails command prefix
+  wails dev     # Incorrect
+  wails build   # Incorrect
+  wails generate bindings  # Incorrect
+  ```
+
+- **Key Differences from Wails v2**
+  - Wails v3 uses a new application API
+  - The window management approach is different
+  - The binding process between frontend and backend has changed
+  - System tray integration is more advanced
+
+- **References**
+  - [Main application file](mdc:main.go)
+  - [Project configuration](mdc:wails3.json)
+  - [Wails v3 Documentation](mdc:https:/v3.wails.io)

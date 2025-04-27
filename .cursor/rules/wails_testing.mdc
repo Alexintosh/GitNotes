@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Wails Application Testing
+
+## Required Testing After Changes
+
+- **Always Run Development Server After Changes**
+  - Run `wails3 dev` to verify application starts without errors
+  - Required after any code change before committing
+  - Especially important for Go backend changes and frontend-backend integration points
+
+## Testing Process
+
+- **Frontend-Only Changes**
+  ```bash
+  # Run the application to verify UI renders correctly
+  wails3 dev
+  ```
+
+- **Backend (Go) Changes**
+  ```bash
+  # Test that backend services compile and function correctly
+  wails3 dev
+  ```
+
+- **Integration Points**
+  ```bash
+  # Verify that frontend can call Go services without errors
+  # Test affected functionality through the UI
+  wails3 dev
+  ```
+
+## Common Errors to Watch For
+
+- **Runtime Errors**
+  - JavaScript errors in the browser console
+  - Panics in Go code
+  - Missing function bindings between frontend and backend
+
+- **Build Errors**
+  - TypeScript compilation errors
+  - Go build failures
+  - Missing dependencies
+
+## Automated Testing (When Applicable)
+
+- **For Critical Components**
+  ```bash
+  # Run Go tests for backend code
+  go test ./...
+  
+  # Run frontend tests if configured
+  npm run test
+  ```
+
+- **Important**: Manual verification with `wails3 dev` is still required even when automated tests pass
