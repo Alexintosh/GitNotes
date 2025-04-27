@@ -3,7 +3,9 @@ import {
   SettingOutlined, 
   SyncOutlined, 
   ClockCircleOutlined,
-  CodeOutlined
+  CodeOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons';
 import { GitNotesService } from '../../../bindings/changeme/services';
 import { useAppStore } from '../../stores/useAppStore';
@@ -11,7 +13,9 @@ import { useAppStore } from '../../stores/useAppStore';
 interface StatusBarProps {
   onToggleSettings: () => void;
   onToggleVimMode: () => void;
+  onToggleSidebar: () => void;
   vimModeEnabled: boolean;
+  isSidebarCollapsed: boolean;
   isConnected: boolean;
   isAutoSyncActive: boolean;
   lastSyncStatus: 'success' | 'failed' | 'in-progress' | null;
@@ -22,7 +26,9 @@ interface StatusBarProps {
 const StatusBar: React.FC<StatusBarProps> = ({
   onToggleSettings,
   onToggleVimMode,
+  onToggleSidebar,
   vimModeEnabled,
+  isSidebarCollapsed,
   isConnected,
   isAutoSyncActive,
   lastSyncStatus,
@@ -70,6 +76,15 @@ const StatusBar: React.FC<StatusBarProps> = ({
       color: token.colorText
     }}>
       <div className="status-indicator">
+        <Tooltip title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}>
+          <Button 
+            type="text" 
+            icon={isSidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} 
+            size="small" 
+            onClick={onToggleSidebar}
+            style={{ marginRight: '8px', padding: '0 4px' }}
+          />
+        </Tooltip>
         <div style={connectedDotStyle} />
         <span>
           {isConnected ? 'Connected' : 'Disconnected'}

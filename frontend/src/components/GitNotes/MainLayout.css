@@ -202,33 +202,4 @@
 
 .resizable-sidebar .ant-layout-sider-children {
   flex: 1;
-}
-
-/* Sidebar toggle button styles */
-.sidebar-toggle-button {
-  position: absolute;
-  top: 10px;
-  left: 268px; /* Position when sidebar is expanded */
-  z-index: 1000;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  transition: transform 0.3s, left 0.3s;
-}
-
-.sidebar-toggle-button.collapsed {
-  transform: rotate(180deg);
-  left: 12px; /* Position when sidebar is collapsed */
-}
-
-/* Dark mode adjustments */
-[data-theme="dark"] .sidebar-toggle-button {
-  background-color: #141414;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 } 

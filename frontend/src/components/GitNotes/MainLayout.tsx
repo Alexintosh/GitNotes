@@ -202,12 +202,6 @@ const MainLayout = () => {
                     </>
                   )}
                 </Sider>
-                <div 
-                  className={`sidebar-toggle-button ${isSidebarCollapsed ? 'collapsed' : ''}`}
-                  onClick={toggleSidebar}
-                >
-                  {isSidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                </div>
               </div>
               <Content style={{ height: '100%', overflow: 'auto' }}>
                 <MarkdownEditor
@@ -226,6 +220,8 @@ const MainLayout = () => {
               vimModeEnabled={vimModeEnabled}
               onToggleVimMode={handleToggleVimMode}
               onReconnect={handleReconnect}
+              onToggleSidebar={toggleSidebar}
+              isSidebarCollapsed={isSidebarCollapsed}
             />
           </>
         )}
