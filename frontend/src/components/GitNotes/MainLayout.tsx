@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Layout, ConfigProvider, theme, message, Spin } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { useAppStore } from '../../stores/useAppStore';
 import FileTree from './FileTree';
 import MarkdownEditor from './MarkdownEditor';

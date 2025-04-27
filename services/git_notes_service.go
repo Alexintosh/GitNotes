@@ -331,12 +331,16 @@ func (gns *GitNotesService) AbortSyncWithConflicts() error {
 	return gns.syncManager.AbortSync()
 }
 
-// SetConflictResolutionStrategy sets the strategy for handling merge conflicts
+// SetConflictResolutionStrategy sets the conflict resolution strategy
+// Valid strategies are:
+// - "manual": Requires user to manually resolve conflicts
+// - "ours": Automatically use our/local changes
+// - "theirs": Automatically use their/remote changes
+// - "both": Keep both sets of changes with conflict markers
 func (gns *GitNotesService) SetConflictResolutionStrategy(strategy string) error {
 	if !gns.repoService.IsConnected() {
-		return errors.New("not connected to a repository")
+		return errors.New("repository not connected")
 	}
-
 	if gns.syncManager == nil {
 		return errors.New("sync manager not initialized")
 	}
@@ -350,6 +354,8 @@ func (gns *GitNotesService) SetConflictResolutionStrategy(strategy string) error
 		conflictStrategy = ConflictStrategyOurs
 	case "theirs":
 		conflictStrategy = ConflictStrategyTheirs
+	case "both":
+		conflictStrategy = ConflictStrategyBoth
 	default:
 		return fmt.Errorf("invalid conflict resolution strategy: %s", strategy)
 	}
@@ -372,11 +378,13 @@ func (gns *GitNotesService) ResolveConflictsWithStrategy(strategy string) error 
 	var conflictStrategy ConflictStrategy
 	switch strategy {
 	case "manual":
-		conflictStrategy = ConflictStrategyManual
+		return fmt.Errorf("manual strategy requires user intervention, not automatic resolution")
 	case "ours":
 		conflictStrategy = ConflictStrategyOurs
 	case "theirs":
 		conflictStrategy = ConflictStrategyTheirs
+	case "both":
+		conflictStrategy = ConflictStrategyBoth
 	default:
 		return fmt.Errorf("invalid conflict resolution strategy: %s", strategy)
 	}

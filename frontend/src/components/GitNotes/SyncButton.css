@@ -1,0 +1,35 @@
+.sync-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.sync-button:hover {
+  transform: scale(1.05);
+}
+
+/* Conflict modal styling */
+.conflict-modal-content {
+  padding: 8px 0;
+}
+
+.conflict-strategy-group {
+  margin: 16px 0;
+}
+
+.conflict-files-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+/* Animation for the sync icon when spinning */
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ant-btn-loading-icon {
+  animation: rotate 1.5s linear infinite;
+} 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -304,4 +305,55 @@ func (gs *GitService) DetectConflicts() ([]string, error) {
 	}
 
 	return conflictedFiles, nil
+}
+
+// ResolveConflictsWithStrategy resolves git conflicts using the specified strategy
+// strategy can be "ours" or "theirs"
+func (gs *GitService) ResolveConflictsWithStrategy(strategy string) error {
+	if strategy != "ours" && strategy != "theirs" {
+		return fmt.Errorf("invalid conflict resolution strategy: %s (must be 'ours' or 'theirs')", strategy)
+	}
+
+	// Use git command to find conflicted files
+	cmdList := exec.Command("git", "diff", "--name-only", "--diff-filter=U")
+	cmdList.Dir = gs.repoPath
+	output, err := cmdList.Output()
+	if err != nil {
+		return fmt.Errorf("failed to list conflicted files: %w", err)
+	}
+
+	// Parse the output to get the list of conflicted files
+	conflictedFiles := []string{}
+	if len(output) > 0 {
+		conflictedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
+	}
+
+	if len(conflictedFiles) == 0 {
+		return nil // No conflicts to resolve
+	}
+
+	// Prepare git command for checkout
+	cmd := exec.Command("git", "checkout", fmt.Sprintf("--%s", strategy), "--")
+	cmd.Dir = gs.repoPath
+
+	// Add conflicted files to the command
+	cmd.Args = append(cmd.Args, conflictedFiles...)
+
+	// Execute git checkout command
+	checkoutOutput, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to execute git checkout --%s: %w\nOutput: %s", strategy, err, string(checkoutOutput))
+	}
+
+	// Now stage the resolved files
+	cmdAdd := exec.Command("git", "add", "--")
+	cmdAdd.Dir = gs.repoPath
+	cmdAdd.Args = append(cmdAdd.Args, conflictedFiles...)
+
+	addOutput, err := cmdAdd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to stage resolved files: %w\nOutput: %s", err, string(addOutput))
+	}
+
+	return nil
 }

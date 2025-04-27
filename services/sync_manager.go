@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -17,25 +18,27 @@ type SyncStatus string
 
 // SyncStatus constants define the possible sync states
 const (
-	SyncStatusIdle     SyncStatus = "Idle"
-	SyncStatusChecking SyncStatus = "Checking for changes"
-	SyncStatusStaging  SyncStatus = "Staging changes"
-	SyncStatusCommit   SyncStatus = "Committing changes"
-	SyncStatusPulling  SyncStatus = "Pulling from remote"
-	SyncStatusPushing  SyncStatus = "Pushing to remote"
-	SyncStatusSuccess  SyncStatus = "Sync completed successfully"
-	SyncStatusError    SyncStatus = "Sync error"
-	SyncStatusConflict SyncStatus = "Conflict detected" // New status for conflict detection
+	SyncStatusIdle      SyncStatus = "Idle"
+	SyncStatusChecking  SyncStatus = "Checking for changes"
+	SyncStatusStaging   SyncStatus = "Staging changes"
+	SyncStatusCommit    SyncStatus = "Committing changes"
+	SyncStatusPulling   SyncStatus = "Pulling from remote"
+	SyncStatusPushing   SyncStatus = "Pushing to remote"
+	SyncStatusSuccess   SyncStatus = "Sync completed successfully"
+	SyncStatusError     SyncStatus = "Sync error"
+	SyncStatusConflict  SyncStatus = "Conflict detected"   // New status for conflict detection
+	SyncStatusResolving SyncStatus = "Resolving conflicts" // Status for conflict resolution
 )
 
-// ConflictStrategy represents the approach to handle merge conflicts
+// ConflictStrategy represents different strategies for resolving conflicts
 type ConflictStrategy string
 
 // ConflictStrategy constants define the possible conflict resolution strategies
 const (
-	ConflictStrategyManual ConflictStrategy = "manual" // Requires manual resolution
-	ConflictStrategyOurs   ConflictStrategy = "ours"   // Use our changes
-	ConflictStrategyTheirs ConflictStrategy = "theirs" // Use their changes
+	ConflictStrategyManual = "manual" // Requires manual resolution
+	ConflictStrategyOurs   = "ours"   // Use our/local changes
+	ConflictStrategyTheirs = "theirs" // Use their/remote changes
+	ConflictStrategyBoth   = "both"   // Keep both changes with conflict markers
 )
 
 // SyncHistoryEntry represents a single sync operation in the history
@@ -59,6 +62,7 @@ type SyncManager struct {
 	maxHistorySize   int
 	conflictStrategy ConflictStrategy
 	currentConflicts []string // Current detected conflicts
+	lastError        error
 }
 
 // NewSyncManager creates a new SyncManager to manage Git synchronization
@@ -182,24 +186,22 @@ func (sm *SyncManager) TriggerManualSync() (string, error) {
 	}
 }
 
-// performSync executes the full sync sequence with detailed status updates
+// performSync executes the actual synchronization process
 func (sm *SyncManager) performSync(ctx context.Context) error {
-	// Check for changes
-	sm.updateStatus(SyncStatusChecking, "Checking for local and remote changes", nil)
+	// Check for local changes
+	sm.updateStatus(SyncStatusChecking, "Checking for local changes", nil)
 
-	// Check if operation was cancelled
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
-	// Check for local changes
 	hasChanges, err := sm.gitService.HasLocalChanges()
 	if err != nil {
 		sm.updateStatus(SyncStatusError, "Failed to check for local changes", err)
 		return err
 	}
 
-	// Stage changes if there are any
+	// If there are local changes, stage and commit them
 	if hasChanges {
 		sm.updateStatus(SyncStatusStaging, "Staging local changes", nil)
 
@@ -213,27 +215,27 @@ func (sm *SyncManager) performSync(ctx context.Context) error {
 			return err
 		}
 
-		// Commit changes
-		sm.updateStatus(SyncStatusCommit, "Committing changes", nil)
+		sm.updateStatus(SyncStatusCommit, "Committing local changes", nil)
 
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 
-		err = sm.gitService.CommitChanges("")
+		err = sm.gitService.CommitChanges("Auto-commit by GitNotes")
 		if err != nil {
 			sm.updateStatus(SyncStatusError, "Failed to commit changes", err)
 			return err
 		}
 	}
 
-	// Pull changes
-	sm.updateStatus(SyncStatusPulling, "Pulling latest changes from remote", nil)
+	// Pull from remote
+	sm.updateStatus(SyncStatusPulling, "Pulling changes from remote", nil)
 
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
+	// Pull changes from remote
 	err = sm.gitService.PullChanges()
 	if err != nil {
 		// For Git errors, unwrap to get the specific error type
@@ -252,7 +254,7 @@ func (sm *SyncManager) performSync(ctx context.Context) error {
 				case ConflictStrategyManual:
 					// Manual strategy requires user intervention, so stop here
 					return fmt.Errorf("merge conflicts detected: %w", err)
-				case ConflictStrategyOurs, ConflictStrategyTheirs:
+				case ConflictStrategyOurs, ConflictStrategyTheirs, ConflictStrategyBoth:
 					// Attempt to resolve with the selected strategy
 					resolveErr := sm.ResolveConflictWithStrategy(sm.conflictStrategy)
 					if resolveErr != nil {
@@ -384,37 +386,78 @@ func (sm *SyncManager) GetConflictDetails() map[string]interface{} {
 		"conflictCount":     len(sm.currentConflicts),
 		"conflictFiles":     sm.currentConflicts,
 		"currentStrategy":   string(sm.conflictStrategy),
-		"resolutionOptions": []string{"manual", "ours", "theirs"},
+		"resolutionOptions": []string{"manual", "ours", "theirs", "both"},
 	}
 }
 
 // ResolveConflictWithStrategy resolves conflicts using the specified strategy
 func (sm *SyncManager) ResolveConflictWithStrategy(strategy ConflictStrategy) error {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-
-	// Check if there are conflicts to resolve
-	if len(sm.currentConflicts) == 0 {
-		return fmt.Errorf("no conflicts to resolve")
+	if strategy != ConflictStrategyOurs &&
+		strategy != ConflictStrategyTheirs &&
+		strategy != ConflictStrategyBoth {
+		return fmt.Errorf("invalid conflict resolution strategy: %s", strategy)
 	}
 
-	// In a real implementation, we would implement the actual resolution logic here
-	// For example:
-	// - For "ours" strategy: Use git checkout --ours <files>
-	// - For "theirs" strategy: Use git checkout --theirs <files>
-	// - Then mark the conflicts as resolved with git add <files>
+	sm.updateStatus(SyncStatusResolving, "Resolving conflicts with strategy: "+string(strategy), nil)
 
-	// For now, just update the status based on the strategy
-	switch strategy {
-	case ConflictStrategyOurs, ConflictStrategyTheirs:
-		// Simulate successful resolution
-		sm.updateStatus(SyncStatusIdle, fmt.Sprintf("Conflicts resolved using '%s' strategy", strategy), nil)
-		sm.currentConflicts = nil
+	// If using the "both" strategy, create copies of the conflicted files with conflict markers
+	if strategy == ConflictStrategyBoth {
+		// Get list of conflicted files using git command
+		cmdList := exec.Command("git", "diff", "--name-only", "--diff-filter=U")
+		cmdList.Dir = sm.gitService.repoPath
+		output, err := cmdList.Output()
+		if err != nil {
+			sm.updateStatus(SyncStatusError, fmt.Sprintf("Failed to list conflicted files: %v", err), err)
+			return fmt.Errorf("failed to list conflicted files: %w", err)
+		}
+
+		// Parse the output to get the list of conflicted files
+		conflictedFiles := []string{}
+		if len(output) > 0 {
+			conflictedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
+		}
+
+		if len(conflictedFiles) == 0 {
+			sm.updateStatus(SyncStatusSuccess, "No conflicts to resolve", nil)
+			return nil // No conflicts to resolve
+		}
+
+		// For each conflicted file, add it to git with conflict markers
+		for _, file := range conflictedFiles {
+			// We just add the file with conflict markers as is
+			cmdAdd := exec.Command("git", "add", "-f", file)
+			cmdAdd.Dir = sm.gitService.repoPath
+			addOutput, err := cmdAdd.CombinedOutput()
+			if err != nil {
+				sm.updateStatus(SyncStatusError, fmt.Sprintf("Failed to stage conflicted file %s: %v", file, err), err)
+				return fmt.Errorf("failed to stage conflicted file %s: %w\nOutput: %s", file, err, string(addOutput))
+			}
+		}
+
+		// Create a commit with the conflict markers
+		err = sm.gitService.CommitChanges(fmt.Sprintf("Keep both changes (conflict markers preserved)"))
+		if err != nil {
+			sm.updateStatus(SyncStatusError, fmt.Sprintf("Failed to commit conflict markers: %v", err), err)
+			return fmt.Errorf("failed to commit conflict markers: %w", err)
+		}
+
+		sm.updateStatus(SyncStatusSuccess, "Conflicts resolved, both changes kept with conflict markers", nil)
 		return nil
-	case ConflictStrategyManual:
-		// Manual strategy doesn't automatically resolve conflicts
-		return fmt.Errorf("manual conflict resolution requires user intervention")
-	default:
-		return fmt.Errorf("unknown conflict resolution strategy: %s", strategy)
 	}
+
+	// For "ours" or "theirs" strategy, use the git service method
+	err := sm.gitService.ResolveConflictsWithStrategy(string(strategy))
+	if err != nil {
+		sm.updateStatus(SyncStatusError, fmt.Sprintf("Failed to resolve conflicts using strategy %s: %v", strategy, err), err)
+		return fmt.Errorf("failed to resolve conflicts using strategy %s: %w", strategy, err)
+	}
+
+	err = sm.gitService.CommitChanges(fmt.Sprintf("Resolve conflicts using '%s' strategy", strategy))
+	if err != nil {
+		sm.updateStatus(SyncStatusError, fmt.Sprintf("Failed to commit resolved conflicts: %v", err), err)
+		return fmt.Errorf("failed to commit resolved conflicts: %w", err)
+	}
+
+	sm.updateStatus(SyncStatusSuccess, fmt.Sprintf("Conflicts resolved using '%s' strategy", strategy), nil)
+	return nil
 }

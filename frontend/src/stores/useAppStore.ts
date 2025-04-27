@@ -6,6 +6,7 @@ interface AppSettings {
   localPath: string;
   autoSyncInterval: number; // in seconds
   isDarkMode: boolean;
+  conflictStrategy: 'manual' | 'ours' | 'theirs' | 'both';
 }
 
 interface FileState {
@@ -14,11 +15,20 @@ interface FileState {
   hasUnsavedChanges: boolean;
 }
 
+interface ConflictInfo {
+  hasConflicts: boolean;
+  conflictFiles: string[];
+  conflictCount: number;
+}
+
 interface SyncStatus {
   isConnected: boolean;
   isAutoSyncActive: boolean;
   lastSyncTime: string | null;
-  lastSyncStatus: 'success' | 'failed' | 'in-progress' | null;
+  lastSyncStatus: 'success' | 'failed' | 'in-progress' | 'conflict' | null;
+  currentStatus: string;
+  statusDetail: string;
+  conflicts: ConflictInfo | null;
 }
 
 interface AppState {
@@ -35,6 +45,9 @@ interface AppState {
   // Sync status
   syncStatus: SyncStatus;
   updateSyncStatus: (status: Partial<SyncStatus>) => void;
+  updateConflictInfo: (conflicts: ConflictInfo | null) => void;
+  setConflictStrategy: (strategy: 'manual' | 'ours' | 'theirs' | 'both') => void;
+  clearConflicts: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -46,6 +59,7 @@ export const useAppStore = create<AppState>()(
         localPath: '',
         autoSyncInterval: 300, // 5 minutes default
         isDarkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
+        conflictStrategy: 'manual',
       },
       updateSettings: (newSettings) => 
         set((state) => ({ 
@@ -81,10 +95,39 @@ export const useAppStore = create<AppState>()(
         isAutoSyncActive: false,
         lastSyncTime: null,
         lastSyncStatus: null,
+        currentStatus: 'Idle',
+        statusDetail: '',
+        conflicts: null,
       },
       updateSyncStatus: (status) => 
         set((state) => ({ 
           syncStatus: { ...state.syncStatus, ...status } 
+        })),
+      updateConflictInfo: (conflicts) =>
+        set((state) => ({
+          syncStatus: {
+            ...state.syncStatus,
+            conflicts,
+            lastSyncStatus: conflicts && conflicts.hasConflicts ? 'conflict' : state.syncStatus.lastSyncStatus,
+            currentStatus: conflicts && conflicts.hasConflicts ? 'Conflict detected' : state.syncStatus.currentStatus,
+          }
+        })),
+      setConflictStrategy: (strategy) =>
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            conflictStrategy: strategy,
+          }
+        })),
+      clearConflicts: () =>
+        set((state) => ({
+          syncStatus: {
+            ...state.syncStatus,
+            conflicts: null,
+            lastSyncStatus: 'success',
+            currentStatus: 'Idle',
+            statusDetail: 'Conflicts resolved',
+          }
         })),
     }),
     {
