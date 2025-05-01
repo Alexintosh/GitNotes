@@ -6,7 +6,7 @@
         <key>CFBundleName</key>
         <string>My Product</string>
         <key>CFBundleExecutable</key>
-        <string>wails-react-ts-template.exe</string>
+        <string>wails-react-ts-template</string>
         <key>CFBundleIdentifier</key>
         <string>com.wails.wails-react-ts-template</string>
         <key>CFBundleVersion</key>
@@ -22,6 +22,11 @@
         <key>NSHighResolutionCapable</key>
         <string>true</string>
         <key>NSHumanReadableCopyright</key>
-        <string>© now, My Company</string>
+        <string>© now, My Company</string>        
+    </dict>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
     </dict>
 </plist>
